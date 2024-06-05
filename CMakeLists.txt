@@ -1,15 +1,10 @@
 cmake_minimum_required (VERSION 3.8)
 
-set (CMAKE_C_STANDARD 23)
+set (CMAKE_C_STANDARD 11)
 set (CMAKE_C_STANDARD_REQUIRED TRUE)
 
 set (VCPKG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
 set (CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
-
-if (WIN32 AND MINGW)
-    set (VCPKG_TARGET_TRIPLET "x64-mingw-dynamic")
-    set (VCPKG_HOST_TRIPLET "x64-mingw-dynamic")
-endif ()
 
 project (raycaster C)
 
