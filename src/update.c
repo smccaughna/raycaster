@@ -5,8 +5,6 @@ static bool check_map_collision(map_t* map, SDL_FRect* rectangle);
 
 void update(state_t* state)
 {
-    SDL_Point scale = { WINDOW_WIDTH / state->map.width, WINDOW_HEIGHT / state->map.height };
-
     if (state->keyboard[SDL_SCANCODE_W]) {
         SDL_FPoint new_pos = {
                 state->player.position.x + state->player.speed * cosf(state->player.angle) * state->time.delta,

@@ -30,26 +30,28 @@ bool init_game(state_t* state)
         return false;
     }
 
+    state->px_buffer = malloc(WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint8_t));
+
     state->time.fps_max = 60;
 
     state->player.position = (SDL_FPoint){ 2.0f, 4.0f };
     state->player.speed = 2.0f;
 
-    state->map.width = 8;
+    state->map.width = 12;
     state->map.height = 8;
     state->map.grid = malloc(state->map.width * state->map.height * sizeof(bool));
     memcpy_s(
         state->map.grid,
-        state->map.width * state->map.height * sizeof(bool),
-        (bool[]){
-                1, 1, 1, 1, 1, 1, 1, 1,
-                1, 0, 0, 0, 0, 0, 0, 1,
-                1, 0, 0, 0, 0, 0, 0, 1,
-                1, 0, 0, 1, 1, 0, 0, 1,
-                1, 0, 0, 1, 1, 0, 0, 1,
-                1, 0, 0, 0, 0, 0, 0, 1,
-                1, 0, 0, 0, 0, 0, 0, 1,
-                1, 1, 1, 1, 1, 1, 1, 1
+        state->map.width * state->map.height * sizeof(uint8_t),
+        (uint8_t[]){
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
+                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
+                1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 1,
+                1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 1,
+                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
+                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
         },
         state->map.width * state->map.height * sizeof(bool)
     );
@@ -59,6 +61,7 @@ bool init_game(state_t* state)
 
 void quit_game(state_t* state)
 {
+    free(state->px_buffer);
     free(state->map.grid);
 
     if (state->window) {
