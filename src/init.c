@@ -24,9 +24,9 @@ bool init_game(state_t* state)
         return false;
     }
 
-    state->renderer = SDL_CreateRenderer(state->window, -1, SDL_RENDERER_ACCELERATED);
-    if (state->renderer == NULL) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error initializing Renderer", SDL_GetError(), NULL);
+    state->surface = SDL_GetWindowSurface(state->window);
+    if (state->surface == NULL) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error getting window surface", SDL_GetError(), NULL);
         return false;
     }
 
@@ -46,10 +46,10 @@ bool init_game(state_t* state)
         (uint8_t[]){
                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
-                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
-                1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 1,
-                1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 1,
-                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
+                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4,
+                1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 4,
+                1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 4,
+                1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4,
                 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1,
                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
         },
@@ -64,12 +64,12 @@ void quit_game(state_t* state)
     free(state->px_buffer);
     free(state->map.grid);
 
-    if (state->window) {
-        SDL_DestroyWindow(state->window);
+    if (state->surface) {
+        SDL_FreeSurface(state->surface);
     }
 
-    if (state->renderer) {
-        SDL_DestroyRenderer(state->renderer);
+    if (state->window) {
+        SDL_DestroyWindow(state->window);
     }
 
     SDL_Quit();

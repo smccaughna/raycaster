@@ -4,74 +4,64 @@
 #define FOV (M_PI / 2.0)
 #define NUM_SECTORS (WINDOW_WIDTH)
 
-static void render_map(SDL_Renderer* renderer, map_t* map, player_t* player, SDL_Point position, int32_t scale);
-static SDL_FPoint raycast(SDL_FPoint origin, float angle, map_t* map);
+typedef struct ray
+{
+    SDL_FPoint point;
+    SDL_Point block;
+    enum {
+        NORTH,
+        SOUTH,
+        EAST,
+        WEST
+    } side;
+} ray_t;
+
+static ray_t raycast(SDL_FPoint origin, float angle, map_t* map);
 
 void render(state_t* state)
 {
-    SDL_SetRenderDrawColor(state->renderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_RenderClear(state->renderer);
-
-    SDL_SetRenderDrawColor(state->renderer, 0x87, 0xCE, 0xEB, 0xFF);
-    SDL_RenderFillRect(state->renderer, &(SDL_Rect){ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT / 2 });
+    SDL_FillRect(state->surface, &(SDL_Rect){ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT }, 0x000000);
+    SDL_FillRect(state->surface, &(SDL_Rect){ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT / 2 }, SDL_MapRGB(state->surface->format, 0x87, 0xCE, 0xEB));
 
     float plane_width = tanf(FOV / 2.0f) * 2;
     for (int i = 0; i < NUM_SECTORS; i++) {
         float angle = state->player.angle + atanf((i * (plane_width / NUM_SECTORS)) - (plane_width / 2.0f));
-        SDL_FPoint ray = raycast(state->player.position, angle, &state->map);
-        float distance = sqrtf(powf(state->player.position.x - ray.x, 2) + powf(state->player.position.y - ray.y, 2));
+        ray_t ray = raycast(state->player.position, angle, &state->map);
+        float distance = sqrtf(powf(state->player.position.x - ray.point.x, 2) + powf(state->player.position.y - ray.point.y, 2));
         int32_t sector_height = (1.0f / (distance * cosf(angle - state->player.angle)) * WINDOW_HEIGHT);
 
-        switch (state->map.grid[(int32_t)(ray.y * state->map.width + ray.x)]) {
-            case 1:
-                SDL_SetRenderDrawColor(state->renderer, 0xFF - (distance * 10), 0xFF - (distance * 10), 0xFF - (distance * 10), 0xFF);
-                break;
+        SDL_Color color;
+        switch (state->map.grid[ray.block.y * state->map.width + ray.block.x]) {
             case 2:
-                SDL_SetRenderDrawColor(state->renderer, 0xFF - (distance * 10), 0x00, 0x00, 0xFF);
+                color = (SDL_Color){ 0xFF - (distance * 10), 0x00, 0x00, 0xFF };
                 break;
             case 3:
-                SDL_SetRenderDrawColor(state->renderer, 0x00, 0xFF - (distance * 10), 0x00, 0xFF);
+                color = (SDL_Color){ 0x00, 0xFF - (distance * 10), 0x00, 0xFF };
+                break;
+            case 4:
+                color = (SDL_Color){ 0x00, 0x00, 0xFF - (distance * 10), 0xFF };
                 break;
             default:
-                SDL_SetRenderDrawColor(state->renderer, 0xFF - (distance * 10), 0xFF - (distance * 10), 0xFF - (distance * 10), 0xFF);
-                break;
+                color = (SDL_Color){ 0xFF - (distance * 10), 0xFF - (distance * 10), 0xFF - (distance * 10), 0xFF };
         }
-        
-        SDL_RenderFillRect(state->renderer, &(SDL_Rect){ i * (WINDOW_WIDTH / NUM_SECTORS), (WINDOW_HEIGHT - sector_height) / 2, WINDOW_WIDTH / NUM_SECTORS, sector_height });
+
+        if (ray.side == NORTH || ray.side == WEST) {
+            if (color.r > 0) color.r -= 0x60;
+            if (color.g > 0) color.g -= 0x60;
+            if (color.b > 0) color.b -= 0x60;
+        }
+
+        if (color.r < 0) color.r = 0;
+        if (color.g < 0) color.g = 0;
+        if (color.b < 0) color.b = 0;
+
+        SDL_FillRect(state->surface, &(SDL_Rect){ i * (WINDOW_WIDTH / NUM_SECTORS), (WINDOW_HEIGHT - sector_height) / 2, WINDOW_WIDTH / NUM_SECTORS, sector_height }, SDL_MapRGB(state->surface->format, color.r, color.g, color.b));
     }
 
-    // render_map(state->renderer, &state->map, &state->player, (SDL_Point){ 0, 0 }, 30);
-
-    SDL_RenderPresent(state->renderer);
+    SDL_UpdateWindowSurface(state->window);
 }
 
-void render_map(SDL_Renderer* renderer, map_t* map, player_t* player, SDL_Point position, int32_t scale)
-{
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-    SDL_RenderFillRect(renderer, &(SDL_Rect){ position.x, position.y, map->width * scale, map->height * scale });
-
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-    for (int i = position.x; i < map->width; i++) {
-        for (int j = position.y; j < map->height; j++) {
-            if (map->grid[j * map->width + i]) {
-                SDL_RenderFillRect(renderer, &(SDL_Rect){ i * scale, j * scale, scale, scale });
-            }
-        }
-    }
-
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF);
-    SDL_RenderFillRect(renderer, &(SDL_Rect){ (int32_t)((player->position.x) * scale) - (scale / 10), (int32_t)(player->position.y * scale) - (scale / 10), scale / 5, scale / 5 });
-
-    SDL_SetRenderDrawColor(renderer, 0x00, 0xFF, 0x00, 0xFF);
-    float plane_width = tanf(FOV / 2.0f) * 2;
-    for (int i = 0; i < NUM_SECTORS; i++) {
-        float angle = player->angle + atanf((i * (plane_width / NUM_SECTORS)) - (plane_width / 2.0f));
-        SDL_FPoint ray = raycast(player->position, angle, map);
-        SDL_RenderDrawLine(renderer, player->position.x * scale, player->position.y * scale, ray.x * scale, ray.y * scale);
-    }
-}
-
-static SDL_FPoint raycast(SDL_FPoint origin, float angle, map_t* map)
+static ray_t raycast(SDL_FPoint origin, float angle, map_t* map)
 {
     SDL_FPoint ray = { cosf(angle), sinf(angle) };
     SDL_FPoint step = { sqrtf(1 + powf(ray.y / ray.x, 2)), sqrtf(1 + powf(ray.x / ray.y, 2)) };
@@ -79,6 +69,7 @@ static SDL_FPoint raycast(SDL_FPoint origin, float angle, map_t* map)
 
     SDL_FPoint length;
     SDL_Point direction;
+    int32_t side;
 
     if (ray.x < 0) {
         direction.x = -1;
@@ -104,17 +95,19 @@ static SDL_FPoint raycast(SDL_FPoint origin, float angle, map_t* map)
             cell.y += direction.y;
             magnitude = length.y;
             length.y += step.y;
+            side = (direction.y > 0) ? SOUTH : NORTH;
         }
         else {
             cell.x += direction.x;
             magnitude = length.x;
             length.x += step.x;
+            side = (direction.x > 0) ? WEST : EAST;
         }
 
         if (map->grid[cell.y * map->width + cell.x]) {
-            return (SDL_FPoint){ (origin.x + (ray.x * magnitude)), (origin.y + (ray.y * magnitude)) };
+            return (ray_t){{ (origin.x + (ray.x * magnitude)), (origin.y + (ray.y * magnitude)) }, cell, side };
         }
     }
 
-    return (SDL_FPoint){ 0.0f, 0.0f };
+    return (ray_t){{ 0.0f, 0.0f }, { 0, 0 }, -1};
 }

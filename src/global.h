@@ -42,7 +42,7 @@ typedef struct state
 {
     bool should_quit;
     SDL_Window* window;
-    SDL_Renderer* renderer;
+    SDL_Surface* surface;
     uint8_t* px_buffer;
     uint8_t* keyboard;
     mouse_t mouse;
