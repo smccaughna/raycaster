@@ -1,15 +1,13 @@
 #pragma once
 
 #include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
 #include <stdbool.h>
 #include <math.h>
 
 #define SDL_MAIN_HANDLED
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 
 typedef struct mouse
 {
@@ -43,7 +41,6 @@ typedef struct state
     bool should_quit;
     SDL_Window* window;
     SDL_Surface* surface;
-    uint8_t* px_buffer;
     uint8_t* keyboard;
     mouse_t mouse;
     clock_t time;

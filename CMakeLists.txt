@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.8)
 
-set (CMAKE_C_STANDARD 11)
+set (CMAKE_C_STANDARD 23)
 set (CMAKE_C_STANDARD_REQUIRED TRUE)
 
 set (VCPKG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
