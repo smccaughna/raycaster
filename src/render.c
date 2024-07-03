@@ -5,18 +5,6 @@
 #define FOV (M_PI / 2.0)
 #define NUM_SECTORS 192
 
-typedef struct ray
-{
-    SDL_FPoint point;
-    SDL_Point block;
-    enum {
-        NORTH,
-        SOUTH,
-        EAST,
-        WEST
-    } side;
-} ray_t;
-
 static void render_line(state_t* state, int32_t line);
 static ray_t raycast(SDL_FPoint origin, float angle, map_t* map);
 
