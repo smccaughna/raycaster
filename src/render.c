@@ -17,13 +17,14 @@ typedef struct ray
     } side;
 } ray_t;
 
+static void draw_rect(uint32_t* pixels, SDL_Rect* rect, uint32_t color);
 static void render_line(state_t* state, int32_t line);
 static ray_t raycast(SDL_FPoint origin, float angle, map_t* map);
 
 void render(state_t* state)
 {
-    SDL_FillRect(state->surface, &(SDL_Rect){ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT }, 0x000000);
-    SDL_FillRect(state->surface, &(SDL_Rect){ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT / 2 }, SDL_MapRGB(state->surface->format, 0x80, 0x80, 0x80));
+    draw_rect(state->surface->pixels, &(SDL_Rect){ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT / 2 }, 0xFF808080);
+    draw_rect(state->surface->pixels, &(SDL_Rect){ 0, WINDOW_HEIGHT / 2, WINDOW_WIDTH, WINDOW_HEIGHT / 2 }, 0xFF000000);
 
     for (int i = 0; i < NUM_SECTORS; i++) {
         render_line(state, i);
@@ -62,6 +63,7 @@ static void render_line(state_t* state, int32_t line)
 
     float step = TEXTURE_SIZE / (float)sector_height;
     float tex_pos = (((WINDOW_HEIGHT - sector_height) / 2) - (WINDOW_HEIGHT / 2) + (sector_height / 2)) * step;
+
     for (int32_t i = (WINDOW_HEIGHT - sector_height) / 2; i < (WINDOW_HEIGHT + sector_height) / 2; i++) {
         int32_t tex_y = (int32_t)tex_pos & (TEXTURE_SIZE - 1);
         tex_pos += step;
@@ -71,15 +73,15 @@ static void render_line(state_t* state, int32_t line)
         uint32_t color = tex_pixels[tex_y * TEXTURE_SIZE + tex_x];
 
         if (ray.side == EAST || ray.side == WEST)
-            color = 0xFF000000 + ((uint32_t)((color >> 16 & 0xFF) * 0.75f) << 16)
-                               + ((uint32_t)((color >> 8 & 0xFF) * 0.75f) << 8)
-                               + (uint32_t)((color & 0xFF) * 0.75f);
+            color = 0xFF000000 | ((uint32_t)((color >> 16 & 0xFF) * 0.75f) << 16)
+                               | ((uint32_t)((color >> 8  & 0xFF) * 0.75f) << 8)
+                               | ((uint32_t)((color       & 0xFF) * 0.75f));
 
-        color = 0xFF000000 + ((uint32_t)((color >> 16 & 0xFF) * (1.0f / (distance * 0.3f + 1))) << 16)
-                           + ((uint32_t)((color >> 8 & 0xFF) * (1.0f / (distance * 0.3f + 1))) << 8)
-                           + (uint32_t)((color & 0xFF) * (1.0f / (distance * 0.3f + 1)));
+        color = 0xFF000000 | ((uint32_t)((color >> 16 & 0xFF) * (1.0f / (distance * 0.3f + 1))) << 16)
+                           | ((uint32_t)((color >> 8  & 0xFF) * (1.0f / (distance * 0.3f + 1))) << 8)
+                           | ((uint32_t)((color       & 0xFF) * (1.0f / (distance * 0.3f + 1))));
 
-        SDL_FillRect(state->surface, &(SDL_Rect){ line * (WINDOW_WIDTH / NUM_SECTORS), i, WINDOW_WIDTH / NUM_SECTORS, 1 }, color);
+        draw_rect(state->surface->pixels, &(SDL_Rect){ line * (WINDOW_WIDTH / NUM_SECTORS), i, WINDOW_WIDTH / NUM_SECTORS, 1 }, color);
     }
 }
 
@@ -132,4 +134,13 @@ static ray_t raycast(SDL_FPoint origin, float angle, map_t* map)
     }
 
     return (ray_t){{ 0.0f, 0.0f }, { 0, 0 }, -1};
+}
+
+static void draw_rect(uint32_t* pixels, SDL_Rect* rect, uint32_t color)
+{
+    for (int32_t j = rect->y; j < rect->y + rect->h; j++) {
+        for (int32_t i = rect->x; i < rect->x + rect->w; i++) {
+            memcpy(pixels + (j * WINDOW_WIDTH) + i, &color, sizeof(uint32_t));
+        }
+    }
 }
