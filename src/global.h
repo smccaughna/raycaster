@@ -2,6 +2,7 @@
 
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
 
@@ -45,6 +46,7 @@ typedef struct state
     SDL_Window* window;
     SDL_Surface* surface;
     TTF_Font* font;
+    SDL_Surface* textures[4];
     uint8_t* keyboard;
     mouse_t mouse;
     clock_t time;

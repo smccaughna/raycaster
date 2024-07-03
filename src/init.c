@@ -30,12 +30,13 @@ bool init_game(state_t* state)
     state->player.position = (SDL_FPoint){ 4.5f, 4.5f };
     state->player.speed = 2.0f;
 
+    state->time.fps_timer = SDL_AddTimer(1000, calculate_fps, state);
+
     state->map.width = 9;
     state->map.height = 9;
     state->map.grid = malloc(state->map.width * state->map.height * sizeof(bool));
-    memcpy_s(
+    memcpy(
         state->map.grid,
-        state->map.width * state->map.height * sizeof(uint8_t),
         (uint8_t[]){
                 1, 1, 1, 1, 1, 1, 1, 1, 1,
                 1, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -50,9 +51,7 @@ bool init_game(state_t* state)
         state->map.width * state->map.height * sizeof(bool)
     );
 
-    state->time.fps_timer = SDL_AddTimer(1000, calculate_fps, state);
-
-    if (!load_textures()) {
+    if (!load_textures(state->textures)) {
         return false;
     }
 
@@ -66,7 +65,7 @@ void quit_game(state_t* state)
     TTF_CloseFont(state->font);
     SDL_RemoveTimer(state->time.fps_timer);
 
-    unload_textures();
+    unload_textures(state->textures);
 
     if (state->surface) {
         SDL_FreeSurface(state->surface);

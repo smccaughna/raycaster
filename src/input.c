@@ -12,6 +12,6 @@ void handle_input(state_t* state)
         }
     }
 
-    state->keyboard = (uint8_t*)SDL_GetKeyboardState(NULL);
+    state->keyboard = SDL_GetKeyboardState(NULL);
     state->mouse.state = SDL_GetMouseState(&state->mouse.position.x, &state->mouse.position.y);
 }

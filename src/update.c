@@ -1,7 +1,18 @@
 #include "global.h"
 #include "update.h"
 
-static bool check_map_collision(map_t* map, SDL_FRect* rectangle);
+static bool check_map_collision(map_t* map, SDL_FRect* rectangle)
+{
+    for (int i = (int32_t)rectangle->x - 1; i <= (int32_t)rectangle->x + 1; i++) {
+        for (int j = (int32_t)rectangle->y - 1; j <= (int32_t)rectangle->y + 1; j++) {
+            if (map->grid[j * map->width + i] && check_collision(rectangle, &(SDL_FRect){ i, j, 1.0f, 1.0f })) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 void update(state_t* state)
 {
@@ -58,19 +69,6 @@ void update(state_t* state)
             state->player.angle -= 2 * M_PI;
         }
     }
-}
-
-static bool check_map_collision(map_t* map, SDL_FRect* rectangle)
-{
-    for (int i = (int32_t)rectangle->x - 1; i <= (int32_t)rectangle->x + 1; i++) {
-        for (int j = (int32_t)rectangle->y - 1; j <= (int32_t)rectangle->y + 1; j++) {
-            if (map->grid[j * map->width + i] && check_collision(rectangle, &(SDL_FRect){ i, j, 1.0f, 1.0f })) {
-                return true;
-            }
-        }
-    }
-
-    return false;
 }
 
 uint32_t calculate_fps(uint32_t interval, void* param)

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <stdint.h>
 #include <SDL.h>
 
 #define TEXTURE_SIZE 32
+#define NUM_TEXTURES 4
 
-bool load_textures();
-void unload_textures();
+typedef struct state state_t;
 
-extern SDL_Surface* textures[4];
+bool load_textures(SDL_Surface** textures);
+void unload_textures(SDL_Surface** textures);

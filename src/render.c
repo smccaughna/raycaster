@@ -17,9 +17,17 @@ typedef struct ray
     } side;
 } ray_t;
 
-static void draw_rect(uint32_t* pixels, SDL_Rect* rect, uint32_t color);
 static void render_line(state_t* state, int32_t line);
 static ray_t raycast(SDL_FPoint origin, float angle, map_t* map);
+
+static void draw_rect(uint32_t* pixels, SDL_Rect* rect, uint32_t color)
+{
+    for (int32_t j = rect->y; j < rect->y + rect->h; j++) {
+        for (int32_t i = rect->x; i < rect->x + rect->w; i++) {
+            memcpy(pixels + (j * WINDOW_WIDTH) + i, &color, sizeof(uint32_t));
+        }
+    }
+}
 
 void render(state_t* state)
 {
@@ -30,12 +38,12 @@ void render(state_t* state)
         render_line(state, i);
     }
 
-    char fps[5];
-    itoa(state->time.fps, fps, 10);
-    SDL_Surface* fps_text = TTF_RenderText_Blended(state->font, fps, (SDL_Color){ 0xFF, 0xFF, 0xFF, 0xFF });
+    char buf[5];
+    itoa(state->time.fps, buf, 10);
+    SDL_Surface* fps_text = TTF_RenderText_Blended(state->font, buf, (SDL_Color){ 0xFF, 0xFF, 0xFF, 0xFF });
 
     int32_t w, h;
-    TTF_SizeText(state->font, fps, &w, &h);
+    TTF_SizeText(state->font, buf, &w, &h);
     SDL_BlitSurface(fps_text, NULL, state->surface, &(SDL_Rect){ 10, 10, w, h });
 
     SDL_UpdateWindowSurface(state->window);
@@ -44,33 +52,35 @@ void render(state_t* state)
 static void render_line(state_t* state, int32_t line)
 {
     float plane_width = tanf(FOV / 2.0f) * 2;
-
     float angle = state->player.angle + atanf((line * (plane_width / NUM_SECTORS)) - (plane_width / 2.0f));
+
     ray_t ray = raycast(state->player.position, angle, &state->map);
     float distance = sqrtf(powf(state->player.position.x - ray.point.x, 2) + powf(state->player.position.y - ray.point.y, 2));
-    int32_t sector_height = (1.0f / (distance * cosf(angle - state->player.angle)) * WINDOW_HEIGHT);
+    int32_t wall_height = (int32_t)(WINDOW_HEIGHT / (distance * cosf(angle - state->player.angle)));
 
     float wall_x = (ray.side == NORTH || ray.side == SOUTH)
                    ? fmodf(ray.point.x, ray.block.x)
                    : fmodf(ray.point.y, ray.block.y);
 
     int32_t tex_x = (int32_t)(wall_x * TEXTURE_SIZE);
-    if (ray.side == NORTH || ray.side == EAST) {
+    if (ray.side == NORTH || ray.side == EAST)
         tex_x = TEXTURE_SIZE - tex_x - 1;
-    }
 
-    uint32_t* tex_pixels = (uint32_t*)textures[state->map.grid[ray.block.y * state->map.width + ray.block.x] - 1]->pixels;
+    uint32_t* texture = (uint32_t*)state->textures[state->map.grid[ray.block.y * state->map.width + ray.block.x] - 1]->pixels;
 
-    float step = TEXTURE_SIZE / (float)sector_height;
-    float tex_pos = (((WINDOW_HEIGHT - sector_height) / 2) - (WINDOW_HEIGHT / 2) + (sector_height / 2)) * step;
+    int32_t wall_start = (WINDOW_HEIGHT - wall_height) / 2;
+    int32_t wall_end = (WINDOW_HEIGHT + wall_height) / 2;
 
-    for (int32_t i = (WINDOW_HEIGHT - sector_height) / 2; i < (WINDOW_HEIGHT + sector_height) / 2; i++) {
-        int32_t tex_y = (int32_t)tex_pos & (TEXTURE_SIZE - 1);
+    float step = TEXTURE_SIZE / (float)wall_height;
+    float tex_pos = (float)(wall_start - (WINDOW_HEIGHT / 2) + (wall_height / 2)) * step;
+
+    for (int32_t i = wall_start; i < wall_end; i++) {
+        int32_t tex_y = (int32_t)tex_pos;
         tex_pos += step;
 
         if (i > WINDOW_HEIGHT - 1 || i < 0) continue;
 
-        uint32_t color = tex_pixels[tex_y * TEXTURE_SIZE + tex_x];
+        uint32_t color = texture[tex_y * TEXTURE_SIZE + tex_x];
 
         if (ray.side == EAST || ray.side == WEST)
             color = 0xFF000000 | ((uint32_t)((color >> 16 & 0xFF) * 0.75f) << 16)
@@ -134,13 +144,4 @@ static ray_t raycast(SDL_FPoint origin, float angle, map_t* map)
     }
 
     return (ray_t){{ 0.0f, 0.0f }, { 0, 0 }, -1};
-}
-
-static void draw_rect(uint32_t* pixels, SDL_Rect* rect, uint32_t color)
-{
-    for (int32_t j = rect->y; j < rect->y + rect->h; j++) {
-        for (int32_t i = rect->x; i < rect->x + rect->w; i++) {
-            memcpy(pixels + (j * WINDOW_WIDTH) + i, &color, sizeof(uint32_t));
-        }
-    }
 }
