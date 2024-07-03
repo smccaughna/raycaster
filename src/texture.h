@@ -8,4 +8,4 @@
 bool load_textures();
 void unload_textures();
 
-extern SDL_Surface* textures[3];
+extern SDL_Surface* textures[4];

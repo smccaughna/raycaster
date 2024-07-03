@@ -72,3 +72,11 @@ static bool check_map_collision(map_t* map, SDL_FRect* rectangle)
 
     return false;
 }
+
+uint32_t calculate_fps(uint32_t interval, void* param)
+{
+    ((state_t*)param)->time.fps = (int32_t)((float)(((state_t*)param)->time.tick - ((state_t*)param)->time.last) / ((float)interval / 1000.0f));
+    ((state_t*)param)->time.last = ((state_t*)param)->time.tick;
+
+    return 1000;
+}

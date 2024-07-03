@@ -10,13 +10,14 @@ int main(int argc, char** argv) {
     }
 
     while (!state.should_quit) {
-        state.time.last = SDL_GetTicks64();
+        uint64_t last = SDL_GetTicks64();
+        state.time.tick++;
 
         handle_input(&state);
         update(&state);
         render(&state);
 
-        state.time.delta = ((SDL_GetTicks64() - state.time.last) / 1000.0f);
+        state.time.delta = ((SDL_GetTicks64() - last) / 1000.0f);
     }
 
     quit_game(&state);

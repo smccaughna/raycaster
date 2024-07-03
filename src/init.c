@@ -8,6 +8,11 @@ bool init_game(state_t* state)
         return false;
     }
 
+    if (TTF_Init() < 0) {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error initializing SDL_ttf", SDL_GetError(), NULL);
+        return false;
+    }
+
     state->window = SDL_CreateWindow("Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     if (state->window == NULL) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error initializing Window", SDL_GetError(), NULL);
@@ -20,7 +25,7 @@ bool init_game(state_t* state)
         return false;
     }
 
-    state->time.fps_max = 60;
+    state->font = TTF_OpenFont("res/CascadiaCode.ttf", 18);
 
     state->player.position = (SDL_FPoint){ 4.5f, 4.5f };
     state->player.speed = 2.0f;
@@ -37,13 +42,15 @@ bool init_game(state_t* state)
                 1, 0, 3, 3, 0, 2, 2, 0, 1,
                 1, 0, 3, 0, 0, 0, 2, 0, 1,
                 1, 0, 0, 0, 0, 0, 0, 0, 1,
-                1, 0, 2, 0, 0, 0, 3, 0, 1,
-                1, 0, 2, 2, 0, 3, 3, 0, 1,
+                1, 0, 2, 0, 0, 0, 4, 0, 1,
+                1, 0, 2, 2, 0, 4, 4, 0, 1,
                 1, 0, 0, 0, 0, 0, 0, 0, 1,
                 1, 1, 1, 1, 1, 1, 1, 1, 1
         },
         state->map.width * state->map.height * sizeof(bool)
     );
+
+    state->time.fps_timer = SDL_AddTimer(1000, calculate_fps, state);
 
     if (!load_textures()) {
         return false;
@@ -56,6 +63,9 @@ void quit_game(state_t* state)
 {
     free(state->map.grid);
 
+    TTF_CloseFont(state->font);
+    SDL_RemoveTimer(state->time.fps_timer);
+
     unload_textures();
 
     if (state->surface) {
@@ -67,4 +77,5 @@ void quit_game(state_t* state)
     }
 
     SDL_Quit();
+    TTF_Quit();
 }
