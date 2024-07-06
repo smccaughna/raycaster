@@ -2,9 +2,11 @@
 #include "render.h"
 #include "texture.h"
 
-#define FOV (M_PI / 2.0)
+#define FOV M_PI_2
+#define PLANE_WIDTH (tanf(FOV / 2.0f) * 2.0f)
 #define NUM_SECTORS 192
 
+static void draw_debug_info(state_t* state, bool show_advanced);
 static void render_line(state_t* state, int32_t line);
 static ray_t raycast(SDL_FPoint origin, float angle, map_t* map);
 
@@ -26,21 +28,14 @@ void render(state_t* state)
         render_line(state, i);
     }
 
-    char buf[5];
-    itoa(state->time.fps, buf, 10);
-    SDL_Surface* fps_text = TTF_RenderText_Blended(state->font, buf, (SDL_Color){ 0xFF, 0xFF, 0xFF, 0xFF });
-
-    int32_t w, h;
-    TTF_SizeText(state->font, buf, &w, &h);
-    SDL_BlitSurface(fps_text, NULL, state->surface, &(SDL_Rect){ 10, 10, w, h });
+    draw_debug_info(state, true);
 
     SDL_UpdateWindowSurface(state->window);
 }
 
 static void render_line(state_t* state, int32_t line)
 {
-    float plane_width = tanf(FOV / 2.0f) * 2;
-    float angle = state->player.angle + atanf((line * (plane_width / NUM_SECTORS)) - (plane_width / 2.0f));
+    float angle = state->player.angle + atanf((line * (PLANE_WIDTH / NUM_SECTORS)) - (PLANE_WIDTH / 2.0f));
 
     ray_t ray = raycast(state->player.position, angle, &state->map);
     float distance = sqrtf(powf(state->player.position.x - ray.point.x, 2) + powf(state->player.position.y - ray.point.y, 2));
@@ -54,13 +49,13 @@ static void render_line(state_t* state, int32_t line)
     if (ray.side == NORTH || ray.side == EAST)
         tex_x = TEXTURE_SIZE - tex_x - 1;
 
-    uint32_t* texture = (uint32_t*)state->textures[state->map.grid[ray.block.y * state->map.width + ray.block.x] - 1]->pixels;
-
     int32_t wall_start = (WINDOW_HEIGHT - wall_height) / 2;
     int32_t wall_end = (WINDOW_HEIGHT + wall_height) / 2;
 
     float step = TEXTURE_SIZE / (float)wall_height;
     float tex_pos = (float)(wall_start - (WINDOW_HEIGHT / 2) + (wall_height / 2)) * step;
+
+    uint32_t* texture = (uint32_t*)state->textures[state->map.grid[ray.block.y * state->map.width + ray.block.x] - 1]->pixels;
 
     for (int32_t i = wall_start; i < wall_end; i++) {
         int32_t tex_y = (int32_t)tex_pos;
@@ -80,6 +75,56 @@ static void render_line(state_t* state, int32_t line)
                            | ((uint32_t)((color       & 0xFF) * (1.0f / (distance * 0.3f + 1))));
 
         draw_rect(state->surface->pixels, &(SDL_Rect){ line * (WINDOW_WIDTH / NUM_SECTORS), i, WINDOW_WIDTH / NUM_SECTORS, 1 }, color);
+    }
+
+    SDL_FPoint floor = { 0.0f };
+    switch (ray.side) {
+        case NORTH:
+            floor = (SDL_FPoint){ ray.point.x, ray.block.y };
+            break;
+        case SOUTH:
+            floor = (SDL_FPoint){ ray.point.x, ray.block.y + 1.0f };
+            break;
+        case EAST:
+            floor = (SDL_FPoint){ ray.block.x + 1.0f, ray.point.y };
+            break;
+        case WEST:
+            floor = (SDL_FPoint){ ray.block.x, ray.point.y };
+            break;
+    }
+
+    uint32_t* floor_texture = (uint32_t*)state->textures[3]->pixels;
+    uint32_t* ceiling_texture = (uint32_t*)state->textures[1]->pixels;
+
+    float wall_distance = distance * cosf(angle - state->player.angle);
+
+    for (int j = wall_end; j < WINDOW_HEIGHT; j++) {
+        float current_floor_distance = WINDOW_HEIGHT / (2.0f * j - WINDOW_HEIGHT);
+        float weight = current_floor_distance / wall_distance;
+
+        SDL_FPoint current_floor = {
+                weight * floor.x + (1.0f - weight) * state->player.position.x,
+                weight * floor.y + (1.0f - weight) * state->player.position.y
+        };
+
+        SDL_Point tex = {
+                (int32_t)(current_floor.x * TEXTURE_SIZE) % TEXTURE_SIZE,
+                (int32_t)(current_floor.y * TEXTURE_SIZE) % TEXTURE_SIZE
+        };
+
+        uint32_t floor_color = floor_texture[tex.y * TEXTURE_SIZE + tex.x];
+        uint32_t ceiling_color = ceiling_texture[tex.y * TEXTURE_SIZE + tex.x];
+
+        floor_color = 0xFF000000 | ((uint32_t)((floor_color >> 16 & 0xFF) * (1.0f / (current_floor_distance * 0.3f + 1))) << 16)
+                                 | ((uint32_t)((floor_color >> 8  & 0xFF) * (1.0f / (current_floor_distance * 0.3f + 1))) << 8)
+                                 | ((uint32_t)((floor_color       & 0xFF) * (1.0f / (current_floor_distance * 0.3f + 1))));
+
+        ceiling_color = 0xFF000000 | ((uint32_t)((ceiling_color >> 16 & 0xFF) * (1.0f / (current_floor_distance * 0.3f + 1))) << 16)
+                                   | ((uint32_t)((ceiling_color >> 8  & 0xFF) * (1.0f / (current_floor_distance * 0.3f + 1))) << 8)
+                                   | ((uint32_t)((ceiling_color       & 0xFF) * (1.0f / (current_floor_distance * 0.3f + 1))));
+
+        draw_rect(state->surface->pixels, &(SDL_Rect){ line * (WINDOW_WIDTH / NUM_SECTORS), j, WINDOW_WIDTH / NUM_SECTORS, 1 }, floor_color);
+        draw_rect(state->surface->pixels, &(SDL_Rect){ line * (WINDOW_WIDTH / NUM_SECTORS), WINDOW_HEIGHT - j - 1, WINDOW_WIDTH / NUM_SECTORS, 1 }, ceiling_color);
     }
 }
 
@@ -132,4 +177,34 @@ static ray_t raycast(SDL_FPoint origin, float angle, map_t* map)
     }
 
     return (ray_t){{ 0.0f, 0.0f }, { 0, 0 }, -1};
+}
+
+static void draw_debug_info(state_t* state, bool show_advanced)
+{
+    char buf_fps[5];
+    itoa(state->time.fps, buf_fps, 10);
+    SDL_Surface* fps_text = TTF_RenderText_Blended(state->font, buf_fps, (SDL_Color){ 0xFF, 0xFF, 0xFF, 0xFF });
+
+    int32_t w, h;
+    TTF_SizeText(state->font, buf_fps, &w, &h);
+    SDL_BlitSurface(fps_text, NULL, state->surface, &(SDL_Rect){ 10, 10, w, h });
+    SDL_FreeSurface(fps_text);
+
+    if (show_advanced) {
+        char buf_pos[19];
+        snprintf(buf_pos, 19, "x: %.2f, y: %.2f", state->player.position.x, state->player.position.y);
+        SDL_Surface *pos_text = TTF_RenderText_Blended(state->font, buf_pos, (SDL_Color) {0xFF, 0xFF, 0xFF, 0xFF});
+
+        TTF_SizeText(state->font, buf_pos, &w, &h);
+        SDL_BlitSurface(pos_text, NULL, state->surface, &(SDL_Rect) {10, 28, w, h});
+        SDL_FreeSurface(pos_text);
+
+        char buf_ang[8];
+        snprintf(buf_ang, 8, "%.3f", state->player.angle * (180.0f / M_PI));
+        SDL_Surface *angle_text = TTF_RenderText_Blended(state->font, buf_ang, (SDL_Color) {0xFF, 0xFF, 0xFF, 0xFF});
+
+        TTF_SizeText(state->font, buf_ang, &w, &h);
+        SDL_BlitSurface(angle_text, NULL, state->surface, &(SDL_Rect) {10, 46, w, h});
+        SDL_FreeSurface(angle_text);
+    }
 }
