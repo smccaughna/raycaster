@@ -11,14 +11,17 @@
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
 
-typedef struct mouse
-{
-    SDL_Point position;
+typedef SDL_Point vec2i;
+typedef SDL_FPoint vec2f;
+typedef SDL_Rect rect;
+typedef SDL_FRect rectf;
+
+typedef struct mouse {
+    vec2i position;
     uint32_t state;
 } mouse_t;
 
-typedef struct time
-{
+typedef struct time {
     uint64_t tick;
     uint64_t last;
     float delta;
@@ -27,21 +30,18 @@ typedef struct time
     int32_t fps_max;
 } clock_t;
 
-typedef struct player
-{
-    SDL_FPoint position;
+typedef struct player {
+    vec2f position;
     float speed;
     float angle;
 } player_t;
 
-typedef struct map
-{
+typedef struct map {
     uint8_t* grid;
     int32_t width, height;
 } map_t;
 
-typedef struct state
-{
+typedef struct state {
     bool should_quit;
     SDL_Window* window;
     SDL_Surface* surface;

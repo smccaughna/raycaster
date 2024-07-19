@@ -1,12 +1,10 @@
 #pragma once
 
-#include <SDL.h>
-
 typedef struct state state_t;
 
 extern void update(state_t* state);
 
-static inline bool check_collision(SDL_FRect* r1, SDL_FRect* r2)
+static inline bool check_collision(rectf* r1, rectf* r2)
 {
     return  r1->x + r1->w >= r2->x &&
             r1->x <= r2->x + r2->w &&

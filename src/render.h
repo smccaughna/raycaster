@@ -4,8 +4,8 @@ typedef struct state state_t;
 
 typedef struct ray
 {
-    SDL_FPoint point;
-    SDL_Point block;
+    vec2f point;
+    vec2i cell;
     enum {
         NORTH,
         SOUTH,

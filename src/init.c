@@ -27,7 +27,7 @@ bool init_game(state_t* state)
 
     state->font = TTF_OpenFont("res/CascadiaCode.ttf", 18);
 
-    state->player.position = (SDL_FPoint){ 4.5f, 4.5f };
+    state->player.position = (vec2f){ 4.5f, 4.5f };
     state->player.speed = 2.0f;
 
     state->time.fps_timer = SDL_AddTimer(1000, calculate_fps, state);

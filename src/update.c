@@ -1,7 +1,7 @@
 #include "global.h"
 #include "update.h"
 
-static bool check_map_collision(map_t* map, SDL_FRect* rectangle)
+static bool check_map_collision(map_t* map, rectf* rectangle)
 {
     for (int i = (int32_t)rectangle->x - 1; i <= (int32_t)rectangle->x + 1; i++) {
         for (int j = (int32_t)rectangle->y - 1; j <= (int32_t)rectangle->y + 1; j++) {
@@ -17,42 +17,42 @@ static bool check_map_collision(map_t* map, SDL_FRect* rectangle)
 void update(state_t* state)
 {
     if (state->keyboard[SDL_SCANCODE_W]) {
-        SDL_FPoint new_pos = {
+        vec2f new_pos = {
                 state->player.position.x + state->player.speed * cosf(state->player.angle) * state->time.delta,
                 state->player.position.y + state->player.speed * sinf(state->player.angle) * state->time.delta
         };
 
-        if (!check_map_collision(&state->map, &(SDL_FRect){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
+        if (!check_map_collision(&state->map, &(rectf){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
             state->player.position = new_pos;
         }
     }
     if (state->keyboard[SDL_SCANCODE_S]) {
-        SDL_FPoint new_pos = {
+        vec2f new_pos = {
                 state->player.position.x - state->player.speed * cosf(state->player.angle) * state->time.delta,
                 state->player.position.y - state->player.speed * sinf(state->player.angle) * state->time.delta
         };
 
-        if (!check_map_collision(&state->map, &(SDL_FRect){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
+        if (!check_map_collision(&state->map, &(rectf){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
             state->player.position = new_pos;
         }
     }
     if (state->keyboard[SDL_SCANCODE_A]) {
-        SDL_FPoint new_pos = {
+        vec2f new_pos = {
                 state->player.position.x + state->player.speed * sinf(state->player.angle) * state->time.delta,
                 state->player.position.y - state->player.speed * cosf(state->player.angle) * state->time.delta
         };
 
-        if (!check_map_collision(&state->map, &(SDL_FRect){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
+        if (!check_map_collision(&state->map, &(rectf){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
             state->player.position = new_pos;
         }
     }
     if (state->keyboard[SDL_SCANCODE_D]) {
-        SDL_FPoint new_pos = {
+        vec2f new_pos = {
                 state->player.position.x - state->player.speed * sinf(state->player.angle) * state->time.delta,
                 state->player.position.y + state->player.speed * cosf(state->player.angle) * state->time.delta
         };
 
-        if (!check_map_collision(&state->map, &(SDL_FRect){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
+        if (!check_map_collision(&state->map, &(rectf){ new_pos.x - 0.1f, new_pos.y - 0.1f, 0.2f, 0.2f })) {
             state->player.position = new_pos;
         }
     }
